@@ -37,29 +37,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  valueClassName = "",
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ElementType;
-  valueClassName?: string;
-}) {
-  return (
-    <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <span className="flex size-9 items-center justify-center rounded-lg bg-secondary text-primary">
-          <Icon className="size-4" />
-        </span>
-      </div>
-      <p className={`mt-3 text-3xl font-bold tracking-tight break-words ${valueClassName}`}>{value}</p>
-    </div>
-  );
-}
+// StatCard, QuickActionsGrid dan ActivityTimeline: komponen presentasi murni.
 
 function DashboardPage() {
   const { data: profile } = useMyProfile();
