@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/lib/supabase-external";
 import shellHtml from "./my-room/shell.html?raw";
@@ -18,6 +18,8 @@ export function MyRoomAuth() {
   const hostRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<MyRoomHandle | null>(null);
   const submittingRef = useRef(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
@@ -100,6 +102,7 @@ export function MyRoomAuth() {
     };
   }, []);
 
+  if (!mounted) return null;
   return <div ref={hostRef} dangerouslySetInnerHTML={{ __html: brandedShellHtml }} />;
 }
 
