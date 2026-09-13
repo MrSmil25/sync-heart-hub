@@ -334,11 +334,11 @@ function AppLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 transform overflow-y-auto border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform lg:static lg:translate-x-0 ${
+        className={`dash-rail fixed inset-y-0 left-0 z-40 w-64 transform overflow-y-auto rounded-none text-sidebar-foreground transition-transform duration-200 ease-out lg:sticky lg:top-3 lg:my-3 lg:ml-3 lg:h-[calc(100vh-1.5rem)] lg:translate-x-0 lg:rounded-3xl ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-5">
+        <div className="flex h-16 items-center justify-between border-b border-dash-line px-5">
           {logoUrl ? (
             <img
               src={logoUrl}
@@ -389,10 +389,10 @@ function AppLayout() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setOpen(false)}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        className="dash-nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 hover:bg-dash-blue-soft/60 hover:text-dash-navy"
                         activeProps={{
                           className:
-                            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium bg-sidebar-accent text-sidebar-accent-foreground ring-1 ring-sidebar-ring/30 shadow-[0_6px_20px_-12px_var(--color-sidebar-ring)]",
+                            "dash-nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold bg-dash-blue-soft/80 text-dash-navy shadow-[inset_3px_0_0_0_var(--dash-blue)]",
                         }}
                       >
                         <item.icon className="size-4" />
@@ -413,8 +413,12 @@ function AppLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-sidebar/80 px-4 backdrop-blur-md lg:px-8">
-          <button className="lg:hidden" onClick={() => setOpen(true)} aria-label="Buka menu">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-dash-line bg-background/70 px-4 backdrop-blur-xl lg:px-8">
+          <button
+            className="rounded-xl border border-dash-line p-2 transition-colors hover:bg-dash-blue-soft/60 lg:hidden"
+            onClick={() => setOpen(true)}
+            aria-label="Buka menu"
+          >
             <Menu className="size-5" />
           </button>
           <div className="flex flex-1 items-center justify-end gap-3">
