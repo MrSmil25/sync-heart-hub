@@ -83,7 +83,11 @@ export function createSidebarPreferenceStore(accountId: string, items: SidebarPr
       const target = index + delta;
       if (index < 0 || target < 0 || target >= snapshot.pins.length) return false;
       const pins = [...snapshot.pins];
-      [pins[index], pins[target]] = [pins[target], pins[index]];
+      const current = pins[index];
+      const next = pins[target];
+      if (current === undefined || next === undefined) return false;
+      pins[index] = next;
+      pins[target] = current;
       commit({ ...snapshot, pins });
       return true;
     },

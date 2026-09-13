@@ -12,5 +12,10 @@
 - [x] Kartu dashboard: Pemangku minggu ini (semua) + Tanpa PIC (BPH)
 - [x] tsgo typecheck bersih; build OK
 
+## Sedang dikerjakan
+- [ ] Dashboard Panorama Tim: hero foto asli, aksi awal, notifikasi, ringkasan lengkap
+- [ ] Navigation rail personal per akun dan panel Lainnya
+- [ ] QA desktop/mobile, light/dark, keyboard, preferensi, build/typecheck
+
 ## Catatan
 - Supabase berstatus external_unmanaged: verifikasi end-to-end terautentikasi di sandbox tidak tersedia; cek manual via pratinjau setelah login.

@@ -1,31 +1,33 @@
 import { Link } from "@tanstack/react-router";
-import { BriefcaseBusiness, CalendarDays, LifeBuoy, SquarePen } from "lucide-react";
+import { ArrowRight, CalendarDays, GraduationCap, LifeBuoy } from "lucide-react";
 
 /**
  * Shortcuts to existing routes only — no new routes, no data access.
  */
-const actions = [
-  { to: "/workspace", label: "Ruang Kerja", icon: BriefcaseBusiness },
-  { to: "/workspace", label: "Buat Tugas", icon: SquarePen },
-  { to: "/calendar", label: "Lihat Kalender", icon: CalendarDays },
-  { to: "/help-requests", label: "Request Bantuan", icon: LifeBuoy },
-] as const;
-
-export function QuickActionsGrid() {
+export function QuickActionsGrid({ pendingLabel }: { pendingLabel: string }) {
+  const actions = [
+    { to: "/mentor-tasks", label: "Tugas dari pembina", description: pendingLabel, icon: GraduationCap },
+    { to: "/calendar", label: "Kalender", description: "Lihat agenda dan kegiatan", icon: CalendarDays },
+    { to: "/help-requests", label: "Request bantuan", description: "Hubungi divisi terkait", icon: LifeBuoy },
+  ] as const;
   return (
-    <section className="space-y-3">
-      <h2 className="text-sm font-semibold tracking-wide text-dash-muted uppercase">Aksi Cepat</h2>
-      <div className="dash-stagger grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <section className="dashboard-start">
+      <h2 className="text-2xl font-semibold text-dash-navy">Mulai dari sini</h2>
+      <div className="mt-3 grid lg:grid-cols-3">
         {actions.map((a) => (
           <Link
             key={a.label}
             to={a.to}
-            className="dash-card dash-quick flex items-center gap-3 p-4 text-sm font-medium"
+            className="dashboard-start-link group"
           >
-            <span className="dash-icon-bubble shrink-0">
-              <a.icon className="size-4" />
+            <span className="dashboard-start-icon">
+              <a.icon className="size-5" />
             </span>
-            <span className="min-w-0 truncate">{a.label}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold text-dash-navy">{a.label}</span>
+              <span className="mt-0.5 block text-sm text-dash-muted">{a.description}</span>
+            </span>
+            <ArrowRight className="size-4 text-dash-muted transition-transform group-hover:translate-x-0.5" />
           </Link>
         ))}
       </div>
