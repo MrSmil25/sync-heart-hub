@@ -24,6 +24,9 @@ import { isBPHOrSupervisor } from "@/lib/hr";
 import { fetchWallets } from "@/lib/finance-summary";
 import { fetchCancelRequests } from "@/lib/cancel-requests";
 import { fetchHelpRequests } from "@/lib/help-requests";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { QuickActionsGrid } from "@/components/dashboard/QuickActionsGrid";
+import { ActivityTimeline, type ActivityItem } from "@/components/dashboard/ActivityTimeline";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -152,8 +155,35 @@ function DashboardPage() {
   const anggotaAktif = profiles.filter((p) => p.status === "Active").length;
   const myDivision = divisions.find((d) => d.code === profile?.division);
 
+  // Timeline dibangun dari data yang sudah dimuat di atas — tanpa query baru.
+  const activityItems: ActivityItem[] = [
+    ...(upcomingEvent
+      ? [
+          {
+            id: `upcoming-${upcomingEvent.id}`,
+            title: `Event berikutnya: ${upcomingEvent.name}`,
+            meta: `${formatEventDate(upcomingEvent.date_start, upcomingEvent.date_end)}${
+              upcomingEvent.venue ? ` — ${upcomingEvent.venue}` : ""
+            }`,
+            to: "/events/$id",
+            params: { id: upcomingEvent.id },
+          } satisfies ActivityItem,
+        ]
+      : []),
+    ...myPicEvents.map(
+      (e) =>
+        ({
+          id: `pic-${e.id}`,
+          title: `Kamu PIC untuk ${e.name}`,
+          meta: `${formatEventDate(e.date_start, e.date_end)} · ${e.status}`,
+          to: "/events/$id",
+          params: { id: e.id },
+        }) satisfies ActivityItem,
+    ),
+  ];
+
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="dash-atmosphere mx-auto max-w-6xl space-y-6">
       {unackWarnings > 0 && (
         <Link
           to="/warnings"
@@ -300,23 +330,38 @@ function DashboardPage() {
 
       {isSupervisor(profile?.role) && <SupervisorOverview />}
 
-      <section className="rounded-2xl bg-primary p-6 text-primary-foreground shadow-sm sm:p-8">
-        <h1 className="text-2xl font-bold sm:text-3xl">
-          Halo, {profile?.nickname || profile?.full_name || "Anggota"}!
-        </h1>
-        <p className="mt-2 text-sm text-primary-foreground/80">
-          Selamat datang kembali di OrgTool. Berikut ringkasan organisasi hari ini.
-        </p>
-        <Link
-          to="/workspace"
-          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-card/90"
-        >
-          <BriefcaseBusiness className="size-4" />
-          Buka Ruang Kerja Saya
-        </Link>
+      <section className="dash-hero dash-enter p-6 sm:p-10">
+        <div className="relative z-10 max-w-2xl">
+          <p className="text-xs font-semibold tracking-[0.18em] text-dash-muted uppercase">
+            Ruang untuk bertumbuh
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            Halo, {profile?.nickname || profile?.full_name || "Anggota"}!
+          </h1>
+          <p className="mt-2 text-base text-dash-muted">
+            Mari lanjutkan langkah baik hari ini.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              to="/workspace"
+              className="inline-flex items-center gap-2 rounded-xl bg-dash-blue px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform duration-200 hover:scale-[1.02]"
+            >
+              <BriefcaseBusiness className="size-4" />
+              Buka Ruang Kerja Saya
+            </Link>
+            <Link
+              to="/guide"
+              className="inline-flex items-center gap-2 rounded-xl border border-dash-line bg-white/70 px-4 py-2.5 text-sm font-semibold text-dash-navy backdrop-blur transition-transform duration-200 hover:scale-[1.02] dark:bg-card dark:text-foreground"
+            >
+              Lihat Panduan
+            </Link>
+          </div>
+        </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <QuickActionsGrid />
+
+      <section className="dash-stagger grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard label="Total Anggota" value={isLoading ? "…" : totalAnggota} icon={Users} />
         <StatCard label="Total Divisi" value={divisions.length || "…"} icon={Boxes} />
         <StatCard label="Anggota Aktif" value={isLoading ? "…" : anggotaAktif} icon={UserCheck} />
@@ -343,49 +388,25 @@ function DashboardPage() {
 
       </section>
 
-      {myPicEvents.length > 0 && (
-        <section className="rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">Event yang Kamu PIC-in</h2>
-          <ul className="mt-3 space-y-2">
-            {myPicEvents.map((e) => (
-              <li key={e.id}>
-                <Link
-                  to="/events/$id"
-                  params={{ id: e.id }}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-3 text-sm transition-colors hover:bg-accent/40"
-                >
-                  <span className="font-medium">{e.name}</span>
-                  <span className="text-muted-foreground">
-                    {formatEventDate(e.date_start, e.date_end)} · {e.status}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {upcomingEvent && (
-        <Link
-          to="/events/$id"
-          params={{ id: upcomingEvent.id }}
-          className="block rounded-2xl border bg-card p-6 shadow-sm transition-colors hover:bg-accent/40"
-        >
-          <p className="text-sm text-muted-foreground">Event Berikutnya</p>
-          <h2 className="mt-1 text-lg font-semibold">{upcomingEvent.name}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {formatEventDate(upcomingEvent.date_start, upcomingEvent.date_end)}
-            {upcomingEvent.venue ? ` — ${upcomingEvent.venue}` : ""}
-          </p>
-        </Link>
-      )}
+      <ActivityTimeline items={activityItems} />
 
       {myDivision && (
-        <section className="rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">Divisi {myDivision.name}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {myDivision.description ?? "Belum ada deskripsi divisi."}
-          </p>
+        <section className="dash-surface relative overflow-hidden p-6">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-16 -right-10 size-48 rounded-full bg-dash-blue-soft/60 blur-2xl"
+          />
+          <div className="relative flex items-start gap-4">
+            <span className="dash-icon-bubble shrink-0">
+              <Building2 className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold tracking-tight">Divisi {myDivision.name}</h2>
+              <p className="mt-1 text-sm text-dash-muted">
+                {myDivision.description ?? "Belum ada deskripsi divisi."}
+              </p>
+            </div>
+          </div>
         </section>
       )}
     </div>
