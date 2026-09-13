@@ -51,7 +51,7 @@ export function ActivityTimeline({ items }: { items: ActivityItem[] }) {
                 {item.to ? (
                   <Link
                     to={item.to}
-                    params={item.params}
+                    {...(item.params ? { params: item.params } : {})}
                     className="block rounded-xl px-2 transition-colors hover:bg-dash-blue-soft/50"
                   >
                     {content}
