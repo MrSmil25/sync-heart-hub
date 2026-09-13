@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Boxes, UserCheck, Building2, BriefcaseBusiness, Handshake, Coins, Landmark, Receipt, CalendarDays } from "lucide-react";
+import { Users, Boxes, UserCheck, Building2, BriefcaseBusiness, Handshake, Coins, Landmark, Receipt, CalendarDays, ArrowRight, Bell } from "lucide-react";
 import { useDivisions, useMyProfile, useProfiles, isSupervisor } from "@/hooks/useProfile";
 import { fetchDeals } from "@/lib/deals";
 import { fetchDashboardFinance } from "@/lib/transactions";
@@ -27,6 +27,9 @@ import { fetchHelpRequests } from "@/lib/help-requests";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { QuickActionsGrid } from "@/components/dashboard/QuickActionsGrid";
 import { ActivityTimeline, type ActivityItem } from "@/components/dashboard/ActivityTimeline";
+import { useMyAssignments, useMySubmissions } from "@/hooks/useAssignments";
+import { fetchUnreadCount } from "@/lib/notifications";
+import teamPhoto from "@/assets/my-room-team.jpg.asset.json";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -155,6 +158,32 @@ function DashboardPage() {
   const anggotaAktif = profiles.filter((p) => p.status === "Active").length;
   const myDivision = divisions.find((d) => d.code === profile?.division);
 
+  const assignmentsQuery = useMyAssignments();
+  const submissionsQuery = useMySubmissions();
+  const { data: unreadNotifications, isLoading: unreadLoading, isError: unreadError } = useQuery({
+    queryKey: ["notifications-unread"],
+    queryFn: fetchUnreadCount,
+    refetchInterval: 45_000,
+  });
+  const submittedAssignmentIds = new Set((submissionsQuery.data ?? []).map((submission) => submission.assignment_id));
+  const pendingAssignments = (assignmentsQuery.data ?? []).filter((assignment) => !submittedAssignmentIds.has(assignment.id)).length;
+  const assignmentsLoading = assignmentsQuery.isLoading || submissionsQuery.isLoading;
+  const assignmentsError = assignmentsQuery.isError || submissionsQuery.isError;
+  const pendingAssignmentLabel = assignmentsError
+    ? "Jumlah tugas belum dapat dimuat"
+    : assignmentsLoading
+      ? "Memuat tugas…"
+      : pendingAssignments === 0
+        ? "Tidak ada tugas yang perlu dilihat"
+        : `${pendingAssignments} tugas perlu dilihat`;
+  const greetingName = profile?.nickname?.trim() || profile?.full_name?.trim().split(/\s+/)[0] || null;
+  const today = new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
+
   // Timeline dibangun dari data yang sudah dimuat di atas — tanpa query baru.
   const activityItems: ActivityItem[] = [
     ...(upcomingEvent
@@ -183,232 +212,127 @@ function DashboardPage() {
   ];
 
   return (
-    <div className="dash-atmosphere mx-auto max-w-6xl space-y-6">
-      {unackWarnings > 0 && (
-        <Link
-          to="/warnings"
-          className="block rounded-2xl border-2 border-red-400 bg-red-50 p-5 font-semibold text-red-900 shadow-sm transition-colors hover:bg-red-100"
-        >
-          Kamu punya {unackWarnings} peringatan yang perlu dibaca. Klik untuk membukanya.
-        </Link>
-      )}
-
-      {proposalsAboutMe.map((p) => (
-        <Link
-          key={p.id}
-          to="/warnings/proposals/$id"
-          params={{ id: p.id }}
-          className="block rounded-2xl border-2 border-amber-400 bg-amber-50 p-5 font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
-        >
-          Ada usulan peringatan untuk kamu. Kamu berhak menyanggah.
-        </Link>
-      ))}
-
-      {canSeeWealth && (
-        <Link
-          to="/finance-summary"
-          className="block rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:bg-accent/40"
-        >
-          <p className="text-sm text-muted-foreground">Total Kekayaan</p>
-          <p className="mt-1 text-3xl font-bold tracking-tight break-words">
-            {wallets ? formatRupiah(wallets.total_saldo) : "…"}
+    <div className="dashboard-panorama mx-auto max-w-[1600px] space-y-7">
+      <section className="dashboard-panorama-hero dash-enter" aria-labelledby="dashboard-heading">
+        <div className="dashboard-hero-copy">
+          <p className="dashboard-hero-date">{today}</p>
+          <h1 id="dashboard-heading">{greetingName ? `Halo, ${greetingName}!` : "Halo!"}</h1>
+          <p className="dashboard-hero-role">
+            {[profile?.role, "My Room"].filter(Boolean).join(" · ")}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {wallets
-              ? `Ops: ${formatRupiah(wallets.ops_saldo)} · Kas: ${formatRupiah(wallets.kas_saldo)}`
-              : "Memuat ringkasan dompet…"}
-          </p>
-        </Link>
-      )}
-
-      {myPendingCancels > 0 && (
-        <Link
-          to="/workspace"
-          className="block rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:bg-accent/40"
-        >
-          Permintaan batal task kamu ({myPendingCancels}) masih menunggu keputusan Kadiv.
-        </Link>
-      )}
-
-      {myPendingHelp > 0 && (
-        <Link
-          to="/help-requests"
-          className="block rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:bg-accent/40"
-        >
-          Request bantuan kamu ({myPendingHelp}) menunggu keputusan Kadiv divisi tujuan.
-        </Link>
-      )}
-
-      {kadiv && decisionsWaiting > 0 && (
-        <Link
-          to="/help-requests"
-          className="block rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
-        >
-          {decisionsWaiting} permintaan menunggu keputusanmu.
-        </Link>
-      )}
-
-      <UrgentBanners />
-      <StakeholderDashboardCards />
-      <MarketingDashboardCards />
-      <PerformanceReminderCard />
-      <LetterReviewCard />
-      <WelcomeGuideCard />
-      <QuickShortcuts />
-      {(isBPH(profile?.role) || (profile?.role === "Kadiv" && profile?.division === "KRD")) && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <ContentBalanceMiniCard />
-        </div>
-      )}
-
-      {myVoteProposals.length > 0 && (
-        <Link
-          to="/warnings/proposals"
-          className="block rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:bg-accent/40"
-        >
-          Ada <span className="font-semibold">{myVoteProposals.length}</span> usulan peringatan
-          menunggu suara kamu.
-        </Link>
-      )}
-
-      {bphOrSupervisor && activeProposals.length > 0 && (
-        <Link
-          to="/warnings/proposals"
-          className="block rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:bg-accent/40"
-        >
-          Usulan aktif di organisasi:{" "}
-          <span className="font-semibold">{activeProposals.length}</span>
-        </Link>
-      )}
-
-      {kadiv && divisionWarningCount > 0 && (
-        <Link
-          to="/warnings"
-          className="block rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:bg-accent/40"
-        >
-          SP aktif di divisi kamu:{" "}
-          <span className="font-semibold">{divisionWarningCount}</span>
-        </Link>
-      )}
-
-      {unpaidBills > 0 && (
-        <Link
-          to="/cash"
-          className="block rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
-        >
-          Kamu punya {unpaidBills} tagihan kas belum dibayar. Klik untuk membayar.
-        </Link>
-      )}
-
-      {cashManager && pendingClaims.length > 0 && (
-        <Link
-          to="/cash"
-          className="block rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:bg-accent/40"
-        >
-          Klaim menunggu verifikasi: <span className="font-semibold">{pendingClaims.length}</span>
-        </Link>
-      )}
-
-      {unreadCoaching > 0 && (
-        <Link
-          to="/coaching"
-          className="block rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:bg-accent/40"
-        >
-          Ada {unreadCoaching} catatan bimbingan yang belum kamu baca. Klik untuk membukanya.
-        </Link>
-      )}
-
-      {weeklyContributions > 0 && (
-        <Link
-          to="/contributions"
-          className="block rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900 shadow-sm transition-colors hover:bg-emerald-100"
-        >
-          Minggu ini kamu mendapat {weeklyContributions} apresiasi dari rekan. Terima kasih sudah
-          hadir untuk tim.
-        </Link>
-      )}
-
-      {isSupervisor(profile?.role) && <SupervisorOverview />}
-
-      <section className="dash-hero dash-enter p-6 sm:p-10">
-        <div className="relative z-10 max-w-2xl">
-          <p className="text-xs font-semibold tracking-[0.18em] text-dash-muted uppercase">
-            Ruang untuk bertumbuh
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Halo, {profile?.nickname || profile?.full_name || "Anggota"}!
-          </h1>
-          <p className="mt-2 text-base text-dash-muted">
-            Mari lanjutkan langkah baik hari ini.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              to="/workspace"
-              className="inline-flex items-center gap-2 rounded-xl bg-dash-blue px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform duration-200 hover:scale-[1.02]"
-            >
-              <BriefcaseBusiness className="size-4" />
+          <div className="dashboard-hero-actions">
+            <Link to="/workspace" className="dashboard-hero-primary">
+              <BriefcaseBusiness className="size-5" />
               Buka Ruang Kerja Saya
             </Link>
-            <Link
-              to="/guide"
-              className="inline-flex items-center gap-2 rounded-xl border border-dash-line bg-white/70 px-4 py-2.5 text-sm font-semibold text-dash-navy backdrop-blur transition-transform duration-200 hover:scale-[1.02] dark:bg-card dark:text-foreground"
-            >
-              Lihat Panduan
+            <Link to="/guide" className="dashboard-hero-secondary">
+              Lihat Panduan <ArrowRight className="size-4" />
             </Link>
           </div>
         </div>
+        <div className="dashboard-team-photo" aria-label="Foto tim My Room">
+          <img src={teamPhoto.url} alt="Tim My Room mengenakan jaket kuning berfoto bersama" width="1024" height="768" />
+        </div>
       </section>
 
-      <QuickActionsGrid />
+      <QuickActionsGrid pendingLabel={pendingAssignmentLabel} />
 
-      <section className="dash-stagger grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard label="Total Anggota" value={isLoading ? "…" : totalAnggota} icon={Users} />
-        <StatCard label="Total Divisi" value={divisions.length || "…"} icon={Boxes} />
-        <StatCard label="Anggota Aktif" value={isLoading ? "…" : anggotaAktif} icon={UserCheck} />
-        <StatCard
-          label="Divisi Saya"
-          value={myDivision?.code ?? "-"}
-          icon={Building2}
-        />
-        <StatCard label="Deal Aktif" value={activeDeals} icon={Handshake} />
-        <StatCard label="Total Pipeline Value" value={formatRupiah(pipelineValue)} icon={Coins} />
-        <StatCard
-          label="Saldo Organisasi"
-          value={finance ? formatRupiah(finance.balance) : "…"}
-          icon={Landmark}
-          valueClassName={finance ? (finance.balance >= 0 ? "text-emerald-600" : "text-red-600") : ""}
-        />
-        <StatCard
-          label="Expense Bulan Ini"
-          value={finance ? formatRupiah(finance.monthExpense) : "…"}
-          icon={Receipt}
-          valueClassName="text-red-600"
-        />
-        <StatCard label="Event Aktif" value={activeEvents.length} icon={CalendarDays} />
-
+      <section className="dashboard-notification-strip" aria-label="Ringkasan notifikasi">
+        <span className="dashboard-notification-icon"><Bell className="size-5" /></span>
+        <p className="min-w-0 flex-1 font-semibold">
+          {unreadError
+            ? "Notifikasi belum dapat dimuat"
+            : unreadLoading
+              ? "Memuat notifikasi…"
+              : unreadNotifications === 0
+                ? "Semua notifikasi sudah dibaca"
+                : `${unreadNotifications} notifikasi baru`}
+        </p>
+        <Link to="/notifications" className="dashboard-strip-link">Lihat notifikasi <ArrowRight className="size-4" /></Link>
       </section>
 
-      <ActivityTimeline items={activityItems} />
+      <div className="flex justify-end">
+        <a href="#ringkasan-organisasi" className="dashboard-summary-link">Ringkasan organisasi <ArrowRight className="size-4" /></a>
+      </div>
 
-      {myDivision && (
-        <section className="dash-surface relative overflow-hidden p-6">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-16 -right-10 size-48 rounded-full bg-dash-blue-soft/60 blur-2xl"
-          />
-          <div className="relative flex items-start gap-4">
-            <span className="dash-icon-bubble shrink-0">
-              <Building2 className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-lg font-semibold tracking-tight">Divisi {myDivision.name}</h2>
-              <p className="mt-1 text-sm text-dash-muted">
-                {myDivision.description ?? "Belum ada deskripsi divisi."}
-              </p>
+      <section id="ringkasan-organisasi" className="scroll-mt-24 space-y-6" aria-labelledby="summary-heading">
+        <div>
+          <p className="text-sm font-semibold text-dash-blue">RINGKASAN</p>
+          <h2 id="summary-heading" className="mt-1 text-2xl font-semibold text-dash-navy">Ringkasan organisasi</h2>
+        </div>
+
+        <div className="space-y-4">
+          {unackWarnings > 0 && (
+            <Link to="/warnings" className="block rounded-2xl border-2 border-red-400 bg-red-50 p-5 font-semibold text-red-900 shadow-sm transition-colors hover:bg-red-100">
+              Kamu punya {unackWarnings} peringatan yang perlu dibaca. Klik untuk membukanya.
+            </Link>
+          )}
+          {proposalsAboutMe.map((p) => (
+            <Link key={p.id} to="/warnings/proposals/$id" params={{ id: p.id }} className="block rounded-2xl border-2 border-amber-400 bg-amber-50 p-5 font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-100">
+              Ada usulan peringatan untuk kamu. Kamu berhak menyanggah.
+            </Link>
+          ))}
+          <UrgentBanners />
+        </div>
+
+        <div className="dash-stagger grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <StatCard label="Total Anggota" value={isLoading ? "…" : totalAnggota} icon={Users} />
+          <StatCard label="Total Divisi" value={divisions.length} icon={Boxes} />
+          <StatCard label="Anggota Aktif" value={isLoading ? "…" : anggotaAktif} icon={UserCheck} />
+          <StatCard label="Divisi Saya" value={myDivision?.code ?? "-"} icon={Building2} />
+          <StatCard label="Deal Aktif" value={activeDeals} icon={Handshake} />
+          <StatCard label="Total Pipeline Value" value={formatRupiah(pipelineValue)} icon={Coins} />
+          <StatCard label="Saldo Organisasi" value={finance ? formatRupiah(finance.balance) : "…"} icon={Landmark} valueClassName={finance ? (finance.balance >= 0 ? "text-emerald-600" : "text-red-600") : ""} />
+          <StatCard label="Expense Bulan Ini" value={finance ? formatRupiah(finance.monthExpense) : "…"} icon={Receipt} valueClassName="text-red-600" />
+          <StatCard label="Event Aktif" value={activeEvents.length} icon={CalendarDays} />
+        </div>
+
+        {canSeeWealth && (
+          <Link to="/finance-summary" className="block rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:bg-accent/40">
+            <p className="text-sm text-muted-foreground">Total Kekayaan</p>
+            <p className="mt-1 text-3xl font-bold tracking-tight break-words">{wallets ? formatRupiah(wallets.total_saldo) : "…"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{wallets ? `Ops: ${formatRupiah(wallets.ops_saldo)} · Kas: ${formatRupiah(wallets.kas_saldo)}` : "Memuat ringkasan dompet…"}</p>
+          </Link>
+        )}
+
+        <div className="space-y-4">
+          {myPendingCancels > 0 && <Link to="/workspace" className="dashboard-info-banner">Permintaan batal task kamu ({myPendingCancels}) masih menunggu keputusan Kadiv.</Link>}
+          {myPendingHelp > 0 && <Link to="/help-requests" className="dashboard-info-banner">Request bantuan kamu ({myPendingHelp}) menunggu keputusan Kadiv divisi tujuan.</Link>}
+          {kadiv && decisionsWaiting > 0 && <Link to="/help-requests" className="dashboard-warning-banner">{decisionsWaiting} permintaan menunggu keputusanmu.</Link>}
+          {myVoteProposals.length > 0 && <Link to="/warnings/proposals" className="dashboard-info-banner">Ada <span className="font-semibold">{myVoteProposals.length}</span> usulan peringatan menunggu suara kamu.</Link>}
+          {bphOrSupervisor && activeProposals.length > 0 && <Link to="/warnings/proposals" className="dashboard-info-banner">Usulan aktif di organisasi: <span className="font-semibold">{activeProposals.length}</span></Link>}
+          {kadiv && divisionWarningCount > 0 && <Link to="/warnings" className="dashboard-info-banner">SP aktif di divisi kamu: <span className="font-semibold">{divisionWarningCount}</span></Link>}
+          {unpaidBills > 0 && <Link to="/cash" className="dashboard-warning-banner">Kamu punya {unpaidBills} tagihan kas belum dibayar. Klik untuk membayar.</Link>}
+          {cashManager && pendingClaims.length > 0 && <Link to="/cash" className="dashboard-info-banner">Klaim menunggu verifikasi: <span className="font-semibold">{pendingClaims.length}</span></Link>}
+          {unreadCoaching > 0 && <Link to="/coaching" className="dashboard-info-banner">Ada {unreadCoaching} catatan bimbingan yang belum kamu baca. Klik untuk membukanya.</Link>}
+          {weeklyContributions > 0 && <Link to="/contributions" className="dashboard-success-banner">Minggu ini kamu mendapat {weeklyContributions} apresiasi dari rekan. Terima kasih sudah hadir untuk tim.</Link>}
+        </div>
+
+        <StakeholderDashboardCards />
+        <MarketingDashboardCards />
+        <PerformanceReminderCard />
+        <LetterReviewCard />
+        {isSupervisor(profile?.role) && <SupervisorOverview />}
+        {(isBPH(profile?.role) || (profile?.role === "Kadiv" && profile?.division === "KRD")) && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><ContentBalanceMiniCard /></div>
+        )}
+        <ActivityTimeline items={activityItems} />
+        {myDivision && (
+          <section className="dash-surface p-6">
+            <div className="flex items-start gap-4">
+              <span className="dash-icon-bubble shrink-0"><Building2 className="size-4" /></span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold tracking-tight">Divisi {myDivision.name}</h2>
+                <p className="mt-1 text-sm text-dash-muted">{myDivision.description ?? "Belum ada deskripsi divisi."}</p>
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <WelcomeGuideCard />
+          <QuickShortcuts />
+        </div>
+      </section>
     </div>
   );
 }
