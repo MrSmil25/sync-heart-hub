@@ -89,13 +89,18 @@ export function MyRoomAuth() {
     };
   }, [navigate]);
 
-  return (
-    <>
-      {/* Scoped to this page only: the styles unmount with the login route. */}
-      <style dangerouslySetInnerHTML={{ __html: myRoomCss }} />
-      <div ref={hostRef} dangerouslySetInnerHTML={{ __html: brandedShellHtml }} />
-    </>
-  );
+  // Scoped to this page only: injected on mount, removed with the login route.
+  useEffect(() => {
+    const el = document.createElement("style");
+    el.setAttribute("data-my-room-auth", "");
+    el.textContent = myRoomCss;
+    document.head.appendChild(el);
+    return () => {
+      el.remove();
+    };
+  }, []);
+
+  return <div ref={hostRef} dangerouslySetInnerHTML={{ __html: brandedShellHtml }} />;
 }
 
 export default MyRoomAuth;

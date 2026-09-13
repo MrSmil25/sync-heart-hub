@@ -644,3 +644,221 @@
     background-color: var(--color-card);
   }
 }
+
+/* ==========================================================================
+   Dashboard V2 — premium organizational workspace (LIGHT MODE ONLY)
+   Dark mode keeps the existing My Room palette via the .dark overrides below.
+   ========================================================================== */
+
+:root {
+  --dash-navy: oklch(0.25 0.055 258);
+  --dash-blue: oklch(0.55 0.216 263);
+  --dash-blue-soft: oklch(0.93 0.036 255);
+  --dash-canvas: oklch(0.98 0.011 250);
+  --dash-surface: oklch(1 0 0 / 75%);
+  --dash-surface-solid: oklch(1 0 0 / 88%);
+  --dash-line: oklch(0.21 0.04 265 / 8%);
+  --dash-line-strong: oklch(0.21 0.04 265 / 14%);
+  --dash-muted: oklch(0.5 0.03 258);
+  --dash-success: oklch(0.7 0.15 163);
+  --dash-warning: oklch(0.77 0.16 70);
+  --dash-danger: oklch(0.63 0.23 25);
+  --dash-shadow: 0 1px 2px oklch(0.25 0.055 258 / 6%), 0 12px 30px -18px oklch(0.25 0.055 258 / 35%);
+  --dash-shadow-lg: 0 2px 4px oklch(0.25 0.055 258 / 6%), 0 26px 50px -22px oklch(0.25 0.055 258 / 40%);
+  --dash-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.dark {
+  --dash-navy: var(--foreground);
+  --dash-blue: var(--primary);
+  --dash-blue-soft: var(--accent);
+  --dash-canvas: transparent;
+  --dash-surface: var(--card);
+  --dash-surface-solid: var(--card);
+  --dash-line: var(--border);
+  --dash-line-strong: var(--border);
+  --dash-muted: var(--muted-foreground);
+  --dash-shadow: 0 1px 2px oklch(0 0 0 / 30%);
+  --dash-shadow-lg: 0 18px 40px -24px oklch(0 0 0 / 60%);
+}
+
+@theme inline {
+  --color-dash-navy: var(--dash-navy);
+  --color-dash-blue: var(--dash-blue);
+  --color-dash-blue-soft: var(--dash-blue-soft);
+  --color-dash-muted: var(--dash-muted);
+  --color-dash-line: var(--dash-line);
+  --color-dash-success: var(--dash-success);
+  --color-dash-warning: var(--dash-warning);
+  --color-dash-danger: var(--dash-danger);
+}
+
+/* Ambient atmosphere behind the workspace (light mode only, CSS gradients). */
+@utility dash-atmosphere {
+  position: relative;
+  isolation: isolate;
+}
+
+:root:not(.dark) .dash-atmosphere::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 55% at 12% -8%, oklch(0.55 0.216 263 / 12%), transparent 65%),
+    radial-gradient(ellipse 55% 45% at 100% 0%, oklch(0.72 0.12 210 / 12%), transparent 62%),
+    radial-gradient(ellipse 65% 50% at 60% 108%, oklch(0.6 0.14 290 / 9%), transparent 68%),
+    var(--dash-canvas);
+}
+
+@utility dash-surface {
+  background-color: var(--dash-surface);
+  border: 1px solid var(--dash-line);
+  box-shadow: var(--dash-shadow);
+  backdrop-filter: blur(14px);
+  border-radius: 1.25rem;
+}
+
+@utility dash-card {
+  background-color: var(--dash-surface);
+  border: 1px solid var(--dash-line);
+  box-shadow: var(--dash-shadow);
+  backdrop-filter: blur(14px);
+  border-radius: 1.25rem;
+  transition:
+    transform 200ms var(--dash-ease),
+    box-shadow 200ms var(--dash-ease),
+    border-color 200ms var(--dash-ease);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--dash-shadow-lg);
+    border-color: var(--dash-line-strong);
+  }
+}
+
+@utility dash-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.75rem;
+  border: 1px solid var(--dash-line);
+  box-shadow: var(--dash-shadow-lg);
+  background:
+    radial-gradient(ellipse 60% 120% at 92% 0%, oklch(0.55 0.216 263 / 18%), transparent 62%),
+    radial-gradient(ellipse 50% 110% at 8% 110%, oklch(0.7 0.13 220 / 14%), transparent 60%),
+    linear-gradient(135deg, oklch(1 0 0 / 90%), oklch(0.96 0.02 250 / 82%));
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: -6rem;
+    top: -8rem;
+    width: 26rem;
+    height: 26rem;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, oklch(0.55 0.216 263 / 16%), oklch(1 0 0 / 0%));
+    filter: blur(6px);
+    pointer-events: none;
+  }
+}
+
+.dark .dash-hero {
+  background: var(--card);
+}
+
+@utility dash-icon-bubble {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.875rem;
+  color: var(--dash-blue);
+  background: linear-gradient(140deg, var(--dash-blue-soft), oklch(1 0 0 / 35%));
+  border: 1px solid var(--dash-line);
+  transition: transform 200ms var(--dash-ease);
+}
+
+@utility dash-rail {
+  background-color: var(--dash-surface-solid);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--dash-line);
+  box-shadow: var(--dash-shadow);
+  border-radius: 1.5rem;
+  transition:
+    box-shadow 200ms var(--dash-ease),
+    backdrop-filter 200ms var(--dash-ease);
+
+  &:hover {
+    box-shadow: var(--dash-shadow-lg);
+  }
+}
+
+@utility dash-nav-link {
+  transition:
+    background-color 200ms var(--dash-ease),
+    color 200ms var(--dash-ease),
+    transform 200ms var(--dash-ease);
+
+  &:hover {
+    transform: translateX(3px);
+  }
+}
+
+@utility dash-quick {
+  transition:
+    transform 200ms var(--dash-ease),
+    box-shadow 200ms var(--dash-ease);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--dash-shadow-lg);
+  }
+
+  &:hover .dash-icon-bubble {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes dash-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility dash-enter {
+  animation: dash-enter 300ms var(--dash-ease) both;
+}
+
+@utility dash-stagger {
+  & > * {
+    animation: dash-enter 300ms var(--dash-ease) both;
+  }
+  & > *:nth-child(1) { animation-delay: 0ms; }
+  & > *:nth-child(2) { animation-delay: 50ms; }
+  & > *:nth-child(3) { animation-delay: 100ms; }
+  & > *:nth-child(4) { animation-delay: 150ms; }
+  & > *:nth-child(5) { animation-delay: 200ms; }
+  & > *:nth-child(6) { animation-delay: 250ms; }
+  & > *:nth-child(7) { animation-delay: 300ms; }
+  & > *:nth-child(8) { animation-delay: 350ms; }
+  & > *:nth-child(9) { animation-delay: 400ms; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-enter,
+  .dash-stagger > * {
+    animation: none !important;
+  }
+  .dash-card:hover,
+  .dash-quick:hover,
+  .dash-nav-link:hover {
+    transform: none;
+  }
+}
